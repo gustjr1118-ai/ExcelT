@@ -1,0 +1,8 @@
+interface:
+  display_name: "ExcelT"
+  short_description: "웹 대시보드를 Excel처럼 설계·구현"
+  brand_color: "#107C41"
+  default_prompt: "Use $excelT to transform this dashboard into an Excel-like interface with familiar number input, table navigation, formulas, and ExcelKospi styling."
+
+policy:
+  allow_implicit_invocation: true

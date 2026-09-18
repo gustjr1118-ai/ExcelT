@@ -1,0 +1,34 @@
+{
+  "name": "ExcelT",
+  "font": {
+    "ui": ["Aptos", "Segoe UI", "Noto Sans KR", "맑은 고딕", "Arial", "sans-serif"],
+    "excel": "Aptos",
+    "koreanFallback": "맑은 고딕"
+  },
+  "colors": {
+    "brand": "#107C41",
+    "brandDark": "#185C37",
+    "selection": "#217346",
+    "text": "#252423",
+    "muted": "#605E5C",
+    "panel": "#FFFFFF",
+    "section": "#F3F6F4",
+    "soft": "#F8F8F8",
+    "grid": "#DCDEDD",
+    "separator": "#E1DFDD",
+    "hover": "#F2F8F4",
+    "hoverBorder": "#CFE7D7",
+    "up": "#A34D4D",
+    "down": "#3F6F9F",
+    "link": "#3567B3",
+    "warning": "#B08A28",
+    "error": "#C00000"
+  },
+  "dimensions": {
+    "defaultRowHeightPx": 24,
+    "controlHeightPx": 24,
+    "controlRadiusPx": 3,
+    "panelRadiusPx": 6,
+    "gridColumns": 12
+  }
+}
