@@ -20,7 +20,13 @@ The skill focuses on:
 - `excelT/SKILL.md`: skill instructions
 - `excelT/references/excelT-design-system.md`: design tokens and interaction rules
 - `excelT/assets/ExcelT_예시_대시보드.xlsx`: example market dashboard workbook
+- `excelT/assets/excelT-shell/index.html`: dependency-free web shell example with top/bottom Excel chrome, theme picker, ribbon collapse, dashboard tabs, worksheet tabs, and a dockable chat pane
+- `excelT/assets/excelT-theme-tokens.json`: shared visual tokens, shell dimensions, and six baseline themes
 - `excelkospi_엑셀테마_템플릿_기획서.md`: analysis and template plan
 - `builders/build_excelT_example.mjs`: reproducible workbook builder
 
 The Excel example uses typed inputs, formulas, dropdown validation, conditional formatting, a linked chart, and a usage guide sheet.
+
+## Web shell example
+
+Open `excelT/assets/excelT-shell/index.html` in a browser to inspect the web dashboard template. It demonstrates the application shell separately from the `.xlsx` workbook: title bar, ribbon, formula bar, dashboard-level tabs, three-pane workspace, notice bar, worksheet tabs, status bar, and the first-run theme selector. Theme and onboarding preferences are persisted in `localStorage` in the prototype.

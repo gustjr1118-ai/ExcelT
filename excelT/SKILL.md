@@ -7,7 +7,7 @@ metadata:
 
 # ExcelT
 
-Use this skill when the user wants a web dashboard to feel familiar to an Excel user or wants a new dashboard built with Excel-like interaction patterns.
+Use this skill when the user wants a web dashboard to feel familiar to an Excel user or wants a new dashboard built with Excel-like interaction patterns. This includes both the workbook interaction model and the surrounding application shell: title bar, ribbon, formula surface, dashboard tabs, sheet tabs, status bar, and theme onboarding.
 
 The success criterion is not visual imitation alone. The dashboard must preserve the user's spreadsheet mental model: values are entered into visible cells, calculated values are distinguishable from inputs, keyboard movement is predictable, formulas or calculation logic are inspectable, and tables can be sorted, filtered, copied, and extended without losing numeric meaning.
 
@@ -20,6 +20,8 @@ Choose one mode before implementation:
 - **Theme-only**: apply the ExcelT visual tokens and component states without rebuilding the data workflow. Use only when the user explicitly asks for styling only.
 
 If the request is ambiguous, default to Transform for an existing dashboard and Build for a new dashboard.
+
+When the user references an Excel screenshot, distinguish between the **workbook layer** (cells, tables, formulas, charts) and the **application shell layer** (top bar, ribbon, navigation, footer, theme selector). A workbook file such as `.xlsx` can model the workbook layer, but a web dashboard must implement the shell layer separately with HTML/CSS/JS or the host framework.
 
 ## Non-negotiable UX rules
 
@@ -43,6 +45,35 @@ Use the smallest set of regions that serves the workflow:
 5. **Analysis area**: charts and summary outputs linked to the same source data. Place analysis beside or above the table it explains.
 6. **Sheet/view navigation**: tabs for distinct reader workflows, not one tab per component. Preserve active tab state.
 7. **Status surface**: row count, filter state, selected aggregate, refresh time, and warnings.
+
+For a screenshot-level Excel experience, use the expanded shell below. Do not collapse all navigation into one generic tab strip:
+
+1. **Application title bar**: product mark, autosave/save state, undo/redo, workbook name, search, settings, notifications, account, and window actions where the host supports them.
+2. **Ribbon navigation**: top-level commands such as File, Home, Insert, Data, Formulas, Review, and View. The active command tab must be visually obvious.
+3. **Ribbon command area**: grouped commands, separators, labels/tooltips, disabled/pressed/hover states, and a collapse/expand control.
+4. **Formula/name surface**: name box, formula/value field, unit, and validation state.
+5. **Dashboard navigation**: product-level views such as market, news, chat, bulletin board, or portfolio. This is separate from worksheet tabs.
+6. **Workbook workspace**: the primary grid plus linked analysis panes. Secondary panels may dock or collapse, but must not cover editable cells.
+7. **Notice bar**: optional service notice or announcement row above worksheet navigation.
+8. **Worksheet navigation**: sheet arrows, add-sheet control, active worksheet tab, and overflow behavior.
+9. **Status bar**: refresh time, row/record count, filter state, warnings, connection/user state, zoom, view mode, and mobile/app actions when relevant.
+
+The shell is a reusable template layer. Keep its semantic regions stable while allowing dashboard-specific data panels inside the workspace.
+
+## Application shell and theme system
+
+When the user asks for the Excel application look, read [`references/excelT-design-system.md`](references/excelT-design-system.md) and implement these contracts:
+
+- Build the shell as a stack of semantic regions, not one large decorative header.
+- Separate application navigation, dashboard navigation, and worksheet navigation. Each has its own active state and keyboard/focus behavior.
+- Use a theme object to drive title bar, ribbon, surfaces, text, selection, grid, market direction, density, and control states. Do not hard-code a new color in an individual component.
+- Provide the six baseline themes when a theme picker is requested: M365 gray, Google blue, Excel green, Excel white, dark gray, and black. Excel green is the default unless the user specifies otherwise.
+- The first-run theme picker must support preview, selected-card state, “later”, “next”, persistence, and re-entry from settings. Optional onboarding preferences such as collapsed ribbon and “do not mimic Excel” must be stored separately from the color theme.
+- Theme changes are visual-only: preserve cell values, formulas, filters, selected view, and user inputs.
+- Every shell control needs default, hover, focus, pressed/active, disabled, loading, stale, and error states where applicable.
+- On smaller screens, preserve the primary input/table surface first; collapse ribbon groups and dock or collapse secondary panes before reducing editable content below usable width.
+
+If only the workbook is requested, do not invent an application shell. If a web dashboard is being transformed or built, prefer the shell template when the reference includes top or bottom Excel chrome.
 
 For a compact dashboard, combine regions rather than adding decorative panels. A good default is a 12-column layout with a title row, input/control row, KPI strip, main table, and one or two linked charts.
 
@@ -90,6 +121,7 @@ When implementing a spreadsheet-like input surface, define these behaviors befor
 7. Add tables, filters, charts, and navigation. Ensure every visual output is traceable to a source range or calculation.
 8. Test representative input edits, blank vs zero, invalid numeric input, pasted ranges, filters, refresh, missing data, formula errors, and keyboard navigation.
 9. Compare the result against the reference at normal zoom. Fix clipped values, weak selection states, excessive cards, hidden logic, inconsistent number formats, and misleading success states.
+10. If an Excel application screenshot is part of the reference, verify shell regions independently: top bar, ribbon, formula surface, dashboard tabs, workspace panes, notice bar, worksheet tabs, and status bar.
 
 ## Definition of done
 
@@ -98,9 +130,11 @@ When implementing a spreadsheet-like input surface, define these behaviors befor
 - The active cell/range, formula/value surface, input styles, warning states, and selected view are visible and consistent.
 - The main table and charts share one source of truth and update together.
 - The visual hierarchy uses Excel-like density, thin borders, restrained fills, and the ExcelT tokens.
+- If shell mode is requested, top and bottom chrome, tab hierarchy, theme picker behavior, and ribbon collapse behavior are implemented and persist across reloads.
 - The implementation includes a short user-facing note for any behavior that differs from desktop Excel.
 
 ## Supporting reference
 
 - Read [`references/excelT-design-system.md`](references/excelT-design-system.md) for theme tokens, layout dimensions, semantic color rules, and component acceptance checks.
+- For a reusable web shell example, start from [`assets/excelT-shell/index.html`](assets/excelT-shell/index.html). It is dependency-free and demonstrates the shell and theme contracts in one file.
 - If producing an `.xlsx` example or modifying a workbook, also use the `Spreadsheets` skill and verify formulas, rendering, and export.

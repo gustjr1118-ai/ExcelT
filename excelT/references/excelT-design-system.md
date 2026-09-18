@@ -60,6 +60,60 @@ Use a 12-column content grid:
 
 For a dense three-pane view, use approximately `35% / 35% / 30%` widths. On smaller screens, collapse the secondary pane before shrinking the primary input/table below usable width.
 
+## Application shell chrome
+
+Use these regions when a web dashboard must feel like the Excel application shown in the reference screens. The values are starting points, not a requirement to reproduce every desktop pixel.
+
+| Region | Starting height | Required behavior |
+|---|---:|---|
+| Title bar | 36–40px | Brand, save state, workbook name, search, account/settings actions |
+| Ribbon tabs | 32–36px | Active tab, keyboard focus, overflow on narrow screens |
+| Ribbon commands | 72–116px | Grouped commands, labels/tooltips, disabled/pressed states, collapse control |
+| Formula/name bar | 28–34px | Address/name, raw/formatted value, formula or calculation detail |
+| Dashboard tabs | 28–34px | Product-level views separate from worksheet tabs |
+| Notice bar | 22–28px | Optional announcement; dismissible when appropriate |
+| Worksheet tabs | 28–34px | Sheet arrows, active sheet, add/overflow controls |
+| Status bar | 22–28px | Refresh, record count, filter, connection, zoom, view mode |
+
+Treat these as semantic regions with stable DOM landmarks or component names. The workspace owns the main scroll, while shell controls remain visible or become intentionally docked. Do not use a fixed footer that covers the last editable row.
+
+## Navigation hierarchy
+
+Excel-like products often have three navigation levels:
+
+1. **Application/ribbon navigation**: commands that change the available actions.
+2. **Dashboard navigation**: product views such as 시세, 뉴스, 종목토론방, or 포트폴리오.
+3. **Worksheet navigation**: data or analysis sheets within the current view.
+
+Each level must have its own active indicator. A dashboard tab change may change the source view, while a worksheet tab change should preserve the application shell and update only the workbook surface. Document any exception.
+
+## Theme catalog and onboarding
+
+Use a theme object rather than component-local colors. The baseline catalog is:
+
+| ID | Label | Mode | Accent |
+|---|---|---|---|
+| `m365-gray` | 최신 M365 회색 | light | `#107C41` |
+| `google-blue` | Google 스프레드시트 | light | `#1A73E8` |
+| `excel-green` | 다채로운 녹색 | light | `#107C41` |
+| `excel-white` | 흰색 | light | `#107C41` |
+| `dark-gray` | 어두운 회색 | dark | `#6EBB8A` |
+| `black` | 검정 | dark | `#8BD3A6` |
+
+The picker should show preview cards, a clear selected state, and `나중에`/`다음` actions. Store `themeId`, `ribbonCollapsed`, and `doNotMimicExcel` separately so a theme can change without changing data or navigation. Persist settings in the product's normal preference store; `localStorage` is acceptable for a dependency-free prototype.
+
+Theme acceptance checks:
+
+- Switching themes updates shell chrome, controls, tables, selected cells, chart accents, and status surfaces together.
+- Reloading preserves the selected theme and onboarding choices.
+- The selected theme does not mutate values, formulas, filters, active view, or selected cell.
+- Dark themes meet readable contrast for text, borders, focus rings, and validation messages.
+- A user can reopen the picker from settings after dismissing onboarding.
+
+## Shell state matrix
+
+For each reusable shell component, define at least: default, hover, focus-visible, active/selected, pressed, disabled, loading, stale, warning, and error. For editable grid cells also define: empty, input, formula/read-only, selected, invalid, and unavailable. The selected cell must remain visible after theme changes, refresh, and panel collapse.
+
 ## Component acceptance checks
 
 ### Workbook shell
@@ -92,3 +146,17 @@ For a dense three-pane view, use approximately `35% / 35% / 30%` widths. On smal
 - Preserve the primary input/table surface first.
 - Collapse or dock secondary panels instead of overlaying them on editable cells.
 - Keep keyboard focus visible after panel changes.
+
+### Application shell
+
+- Title bar, ribbon, formula bar, dashboard tabs, workspace, worksheet tabs, and status bar are visually distinguishable.
+- Application, dashboard, and worksheet navigation do not share ambiguous active styling.
+- Ribbon collapse does not remove access to the active dashboard or worksheet.
+- Notice and status bars do not cover editable rows or keyboard focus.
+- Secondary panes can dock or collapse on narrow screens while the main input/table remains usable.
+
+### Theme picker
+
+- Six baseline themes can be previewed and selected.
+- First-run actions and settings re-entry work without data reset.
+- Theme persistence survives reload and applies to every shell region.

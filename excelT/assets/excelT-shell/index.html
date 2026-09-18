@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ExcelT Shell Example</title>
+  <style>
+    :root {
+      --brand: #107c41;
+      --brand-dark: #185c37;
+      --accent: #107c41;
+      --title-bar: #107c41;
+      --shell: #f3f6f4;
+      --panel: #ffffff;
+      --section: #f3f6f4;
+      --soft: #f8f8f8;
+      --grid: #dcdedd;
+      --text: #252423;
+      --muted: #605e5c;
+      --hover: #f2f8f4;
+      --selection: #217346;
+      --link: #3567b3;
+      --up: #a34d4d;
+      --down: #3f6f9f;
+      --warning: #b08a28;
+      --error: #c00000;
+      --shadow: 0 8px 30px rgba(0, 0, 0, .18);
+      --font: Aptos, "Segoe UI", "Noto Sans KR", "맑은 고딕", Arial, sans-serif;
+    }
+
+    [data-theme="m365-gray"] { --accent:#107c41; --title-bar:#107c41; --shell:#f3f2f1; --section:#f3f2f1; --hover:#eaf5ee; }
+    [data-theme="google-blue"] { --accent:#1a73e8; --title-bar:#1a73e8; --brand:#1a73e8; --brand-dark:#185abc; --shell:#f8fafd; --section:#eef3fb; --hover:#e8f0fe; --selection:#1a73e8; }
+    [data-theme="excel-white"] { --accent:#107c41; --title-bar:#ffffff; --shell:#ffffff; --section:#fafafa; --hover:#f2f8f4; }
+    [data-theme="dark-gray"] { --accent:#6ebb8a; --title-bar:#333333; --shell:#3a3a3a; --panel:#2b2b2b; --section:#3a3a3a; --soft:#333333; --grid:#555555; --text:#f2f2f2; --muted:#b9b9b9; --hover:#3e5145; --selection:#6ebb8a; --link:#8db7ff; --up:#e28b8b; --down:#8fb5df; }
+    [data-theme="black"] { --accent:#8bd3a6; --title-bar:#111111; --shell:#1c1c1c; --panel:#111111; --section:#242424; --soft:#1c1c1c; --grid:#454545; --text:#f7f7f7; --muted:#b6b6b6; --hover:#263a2c; --selection:#8bd3a6; --link:#9fc2ff; --up:#ed9999; --down:#9fc5ed; }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body { background: var(--shell); color: var(--text); font: 12px/1.35 var(--font); overflow: hidden; }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+    .icon { display: inline-grid; place-items: center; width: 22px; height: 22px; font-size: 15px; }
+    .ghost { border: 0; background: transparent; border-radius: 3px; cursor: pointer; }
+    .ghost:hover, .ghost:focus-visible { background: rgba(255,255,255,.16); outline: none; }
+    .control { height: 26px; border: 1px solid var(--grid); border-radius: 3px; background: var(--panel); color: var(--text); padding: 0 8px; }
+    .control:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+    .app { display: grid; grid-template-rows: 38px 34px auto 32px minmax(0,1fr) 24px 30px 26px; height: 100vh; min-width: 980px; background: var(--panel); }
+    .titlebar { display:flex; align-items:center; gap:8px; padding:0 10px; background:var(--title-bar); color:var(--title-text, #fff); }
+    [data-theme="excel-white"] .titlebar { --title-text: var(--text); border-bottom: 1px solid var(--grid); }
+    .excel-mark { display:grid; place-items:center; width:22px; height:22px; border:1px solid currentColor; border-radius:3px; font-weight:700; }
+    .titlebar .filename { font-weight:600; margin-left:8px; white-space:nowrap; }
+    .autosave { display:flex; align-items:center; gap:5px; color:inherit; opacity:.95; }
+    .switch { width:26px; height:14px; border-radius:8px; background:rgba(255,255,255,.35); padding:2px; display:inline-flex; justify-content:flex-end; }
+    .switch::after { content:""; width:10px; height:10px; border-radius:50%; background:#fff; }
+    .titlebar .spacer { flex:1; }
+    .search { width:238px; height:26px; border:0; border-radius:3px; background:rgba(255,255,255,.86); color:#333; padding:0 10px; }
+    .search::placeholder { color:#626262; }
+    .login { border:1px solid rgba(255,255,255,.65); color:inherit; border-radius:13px; padding:3px 10px; background:transparent; cursor:pointer; }
+    .window-actions { display:flex; gap:2px; margin-left:8px; }
+
+    .ribbon-tabs { display:flex; align-items:end; gap:2px; padding:0 10px; background:var(--panel); border-bottom:1px solid var(--grid); }
+    .ribbon-tab { height:34px; min-width:52px; padding:0 12px; border:0; background:transparent; cursor:pointer; border-bottom:3px solid transparent; }
+    .ribbon-tab:hover, .ribbon-tab.active { background:var(--hover); border-bottom-color:var(--accent); color:var(--brand-dark); font-weight:600; }
+    .ribbon-toggle { margin-left:auto; align-self:center; border:1px solid var(--grid); background:var(--panel); border-radius:3px; cursor:pointer; padding:4px 8px; }
+    .ribbon-body { display:flex; align-items:stretch; min-height:0; padding:6px 10px; background:var(--panel); border-bottom:1px solid var(--grid); overflow:hidden; }
+    .ribbon-group { display:flex; flex-direction:column; justify-content:space-between; min-width:100px; padding:0 12px; border-right:1px solid var(--grid); }
+    .ribbon-group:first-child { padding-left:0; }
+    .ribbon-actions { display:flex; align-items:center; gap:6px; }
+    .ribbon-action { min-width:44px; height:49px; display:flex; flex-direction:column; align-items:center; justify-content:center; border:0; border-radius:3px; background:transparent; cursor:pointer; gap:3px; }
+    .ribbon-action:hover, .ribbon-action:focus-visible { background:var(--hover); outline:none; }
+    .ribbon-action .icon { font-size:19px; }
+    .ribbon-label { color:var(--muted); font-size:10px; text-align:center; }
+    .ribbon-group-name { color:var(--muted); font-size:10px; text-align:center; margin-top:3px; }
+    .ribbon-collapsed .ribbon-body { display:none; }
+    .app.ribbon-collapsed { grid-template-rows:38px 34px 0 32px minmax(0,1fr) 24px 30px 26px; }
+
+    .formula-bar { display:flex; align-items:center; gap:6px; padding:3px 10px; background:var(--soft); border-bottom:1px solid var(--grid); }
+    .name-box { width:74px; text-align:center; }
+    .fx { color:var(--muted); font-style:italic; font-weight:700; padding:0 4px; }
+    .formula-value { flex:1; height:25px; border:1px solid var(--grid); background:var(--panel); padding:3px 8px; color:var(--text); overflow:hidden; white-space:nowrap; }
+    .formula-state { color:var(--muted); white-space:nowrap; }
+
+    .dashboard-tabs { display:flex; align-items:end; gap:1px; padding:0 10px; background:var(--panel); border-bottom:1px solid var(--grid); overflow:auto; }
+    .dashboard-tab { height:32px; padding:0 15px; border:0; border-bottom:3px solid transparent; background:transparent; cursor:pointer; white-space:nowrap; }
+    .dashboard-tab.active { color:var(--accent); border-bottom-color:var(--accent); font-weight:700; }
+    .dashboard-tab:hover { background:var(--hover); }
+
+    .workspace { display:grid; grid-template-columns:34% 38% 28%; min-height:0; background:var(--panel); }
+    .pane { min-width:0; min-height:0; display:flex; flex-direction:column; border-right:1px solid var(--grid); }
+    .pane:last-child { border-right:0; }
+    .pane-header { display:flex; align-items:center; gap:7px; min-height:38px; padding:5px 9px; border-bottom:1px solid var(--grid); background:var(--section); }
+    .pane-header h2 { margin:0; font-size:12px; flex:1; }
+    .pane-tools { display:flex; gap:3px; }
+    .pane-body { min-height:0; overflow:auto; }
+    .toolbar-row { display:flex; gap:5px; align-items:center; padding:5px 8px; border-bottom:1px solid var(--grid); background:var(--panel); }
+    .toolbar-row .control { height:24px; }
+    .toolbar-row .spacer { flex:1; }
+    .pill { display:inline-flex; align-items:center; gap:4px; border:1px solid var(--grid); background:var(--panel); border-radius:12px; padding:3px 8px; color:var(--muted); }
+    table { width:100%; border-collapse:collapse; table-layout:fixed; }
+    th, td { height:27px; padding:4px 7px; border-right:1px solid var(--grid); border-bottom:1px solid var(--grid); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    th { position:sticky; top:0; z-index:1; background:var(--section); font-weight:600; }
+    td.number { text-align:right; font-variant-numeric:tabular-nums; }
+    td.link { color:var(--link); cursor:pointer; }
+    tr:hover td { background:var(--hover); }
+    tr.selected td { background:color-mix(in srgb, var(--selection) 12%, var(--panel)); }
+    tr.selected td:first-child { box-shadow:inset 3px 0 var(--selection); }
+    .up { color:var(--up); } .down { color:var(--down); }
+    .input-row { display:grid; grid-template-columns:1fr 76px auto; gap:6px; padding:8px; border-bottom:1px solid var(--grid); background:var(--soft); }
+    .input-row input { min-width:0; }
+    .primary { border:1px solid var(--accent); border-radius:3px; padding:0 10px; background:var(--accent); color:#fff; cursor:pointer; font-weight:600; }
+    .primary:hover { filter:brightness(.95); }
+    .kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:8px; }
+    .kpi { border:1px solid var(--grid); background:var(--panel); padding:7px 8px; min-width:0; }
+    .kpi small { display:block; color:var(--muted); }
+    .kpi strong { display:block; margin-top:2px; font-size:16px; }
+    .news-title { font-weight:600; color:var(--link); }
+    .news-summary { color:var(--muted); }
+    .chat { background:var(--panel); }
+    .chat-list { padding:8px; display:flex; flex-direction:column; gap:7px; }
+    .chat-message { border:1px solid var(--grid); border-radius:5px; padding:7px 8px; background:var(--panel); }
+    .chat-message .meta { display:flex; justify-content:space-between; color:var(--muted); font-size:10px; margin-bottom:3px; }
+    .chat-message strong { color:var(--accent); }
+    .chat-compose { display:flex; gap:5px; padding:7px; border-top:1px solid var(--grid); background:var(--section); }
+    .chat-compose input { flex:1; min-width:0; }
+
+    .notice-bar { display:flex; align-items:center; gap:8px; padding:0 10px; border-top:1px solid var(--grid); border-bottom:1px solid var(--grid); background:var(--soft); color:var(--muted); }
+    .notice-bar strong { color:var(--accent); }
+    .notice-bar .spacer { flex:1; }
+    .sheet-tabs { display:flex; align-items:end; gap:3px; padding:0 8px; border-bottom:1px solid var(--grid); background:var(--section); overflow:hidden; }
+    .sheet-arrow, .sheet-add { align-self:center; border:0; background:transparent; cursor:pointer; padding:4px 6px; }
+    .sheet-tab { height:30px; padding:0 14px; border:0; border-bottom:3px solid transparent; background:transparent; cursor:pointer; white-space:nowrap; }
+    .sheet-tab.active { color:var(--accent); border-bottom-color:var(--accent); background:var(--panel); font-weight:700; }
+    .mobile { margin-left:auto; border:1px solid var(--accent); color:var(--accent); background:var(--panel); border-radius:3px; padding:4px 9px; cursor:pointer; }
+    .status-bar { display:flex; align-items:center; gap:16px; padding:0 10px; background:var(--section); color:var(--muted); border-top:1px solid var(--grid); font-size:11px; }
+    .status-bar .spacer { flex:1; }
+    .zoom { display:flex; align-items:center; gap:5px; }
+    .zoom input { width:90px; accent-color:var(--accent); }
+
+    .modal-backdrop { position:fixed; inset:0; display:grid; place-items:center; background:rgba(0,0,0,.28); z-index:10; }
+    .modal-backdrop[hidden] { display:none; }
+    .modal { width:min(680px, calc(100vw - 32px)); background:var(--panel); color:var(--text); border-radius:8px; box-shadow:var(--shadow); padding:18px; }
+    .modal-head { display:flex; align-items:center; gap:10px; }
+    .modal-head h1 { flex:1; margin:0; font-size:17px; }
+    .modal-close { border:0; background:transparent; cursor:pointer; font-size:20px; color:var(--muted); }
+    .progress { display:grid; grid-template-columns:repeat(5,1fr); gap:4px; margin:12px 0 16px; }
+    .progress span { height:4px; border-radius:4px; background:var(--grid); }
+    .progress span.active { background:var(--accent); }
+    .modal-intro { text-align:center; color:var(--muted); margin:0 0 14px; }
+    .theme-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+    .theme-card { text-align:left; border:1px solid var(--grid); border-radius:6px; background:var(--panel); padding:8px; cursor:pointer; }
+    .theme-card:hover, .theme-card.selected { border-color:var(--accent); box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent); }
+    .theme-card .preview { height:25px; border-radius:3px; margin-bottom:6px; background:var(--preview-shell); border:1px solid var(--grid); position:relative; overflow:hidden; }
+    .theme-card .preview::before { content:""; display:block; height:7px; background:var(--preview-accent); }
+    .theme-card .preview::after { content:""; display:block; width:56%; height:6px; margin:5px; background:var(--preview-panel); box-shadow:38px 0 0 var(--preview-panel); }
+    .theme-card[data-theme-card="m365-gray"] { --preview-accent:#107c41; --preview-shell:#f3f2f1; --preview-panel:#fff; }
+    .theme-card[data-theme-card="google-blue"] { --preview-accent:#1a73e8; --preview-shell:#f8fafd; --preview-panel:#fff; }
+    .theme-card[data-theme-card="excel-green"] { --preview-accent:#107c41; --preview-shell:#f3f6f4; --preview-panel:#fff; }
+    .theme-card[data-theme-card="excel-white"] { --preview-accent:#107c41; --preview-shell:#fff; --preview-panel:#fafafa; }
+    .theme-card[data-theme-card="dark-gray"] { --preview-accent:#6ebb8a; --preview-shell:#3a3a3a; --preview-panel:#2b2b2b; color:#fff; }
+    .theme-card[data-theme-card="black"] { --preview-accent:#8bd3a6; --preview-shell:#1c1c1c; --preview-panel:#111; color:#fff; }
+    .theme-card strong { display:block; font-size:12px; }
+    .theme-card small { color:var(--muted); }
+    .modal-options { display:grid; gap:6px; margin-top:12px; }
+    .modal-options label { display:flex; gap:8px; align-items:start; border:1px solid var(--grid); border-radius:5px; padding:8px; }
+    .modal-options small { display:block; color:var(--muted); margin-top:2px; }
+    .modal-actions { display:flex; gap:8px; margin-top:12px; }
+    .modal-actions button { flex:1; height:34px; border-radius:4px; cursor:pointer; }
+    .later { border:1px solid var(--grid); background:var(--panel); }
+    .next { border:1px solid var(--accent); background:var(--accent); color:#fff; }
+
+    @media (max-width: 1180px) {
+      .app { min-width:0; }
+      .search { width:160px; }
+      .workspace { grid-template-columns:40% 60%; }
+      .workspace .chat { display:none; }
+    }
+  </style>
+</head>
+<body data-theme="excel-green">
+  <div class="app" id="app">
+    <header class="titlebar" aria-label="워크북 상단바">
+      <span class="excel-mark">X</span>
+      <span class="autosave"><span class="switch" aria-hidden="true"></span> 자동 저장</span>
+      <button class="ghost icon" title="저장">▣</button>
+      <button class="ghost icon" title="실행 취소">↶</button>
+      <button class="ghost icon" title="다시 실행">↷</button>
+      <span class="filename">ExcelT_market_dashboard.xlsx</span>
+      <span class="spacer"></span>
+      <input class="search" placeholder="검색" aria-label="검색">
+      <button class="ghost icon" title="설정" id="settingsButton">⚙</button>
+      <button class="ghost icon" title="알림">♧</button>
+      <button class="login">로그인</button>
+      <div class="window-actions" aria-hidden="true"><span>—</span><span>□</span><span>×</span></div>
+    </header>
+
+    <nav class="ribbon-tabs" aria-label="리본 메뉴">
+      <button class="ribbon-tab">파일</button><button class="ribbon-tab active">홈</button><button class="ribbon-tab">삽입</button><button class="ribbon-tab">페이지 레이아웃</button><button class="ribbon-tab">수식</button><button class="ribbon-tab">데이터</button><button class="ribbon-tab">검토</button><button class="ribbon-tab">보기</button>
+      <button class="ribbon-toggle" id="ribbonToggle">리본 접기</button>
+    </nav>
+
+    <section class="ribbon-body" aria-label="홈 명령 영역">
+      <div class="ribbon-group"><div class="ribbon-actions"><button class="ribbon-action"><span class="icon">📋</span><span>붙여넣기</span></button><button class="ribbon-action"><span class="icon">✂</span><span>잘라내기</span></button></div><span class="ribbon-group-name">클립보드</span></div>
+      <div class="ribbon-group"><div class="ribbon-actions"><button class="ribbon-action"><span class="icon">B</span><span>굵게</span></button><button class="ribbon-action"><span class="icon">A</span><span>글꼴</span></button><button class="ribbon-action"><span class="icon">▦</span><span>테두리</span></button></div><span class="ribbon-group-name">글꼴</span></div>
+      <div class="ribbon-group"><div class="ribbon-actions"><button class="ribbon-action"><span class="icon">↔</span><span>맞춤</span></button><button class="ribbon-action"><span class="icon">≡</span><span>정렬</span></button></div><span class="ribbon-group-name">맞춤</span></div>
+      <div class="ribbon-group"><div class="ribbon-actions"><button class="ribbon-action"><span class="icon">%</span><span>숫자 형식</span></button><button class="ribbon-action"><span class="icon">∑</span><span>자동 합계</span></button></div><span class="ribbon-group-name">표시 형식</span></div>
+      <div class="ribbon-group"><div class="ribbon-actions"><button class="ribbon-action"><span class="icon">▤</span><span>표 서식</span></button><button class="ribbon-action"><span class="icon">🎨</span><span>셀 스타일</span></button></div><span class="ribbon-group-name">스타일</span></div>
+      <div class="ribbon-group"><div class="ribbon-actions"><button class="ribbon-action" id="themeButton"><span class="icon">◈</span><span>테마</span></button><button class="ribbon-action"><span class="icon">↻</span><span>새로 고침</span></button></div><span class="ribbon-group-name">ExcelT</span></div>
+    </section>
+
+    <section class="formula-bar" aria-label="수식 입력 영역">
+      <input class="control name-box" id="nameBox" value="A4" aria-label="이름 상자">
+      <span class="fx">fx</span>
+      <div class="formula-value" id="formulaValue">삼성전자</div>
+      <span class="formula-state">입력 셀</span>
+    </section>
+
+    <nav class="dashboard-tabs" aria-label="대시보드 화면 탭">
+      <button class="dashboard-tab active">시세</button><button class="dashboard-tab">뉴스</button><button class="dashboard-tab">종목토론방</button><button class="dashboard-tab">탕비실</button><button class="dashboard-tab">커뮤니티</button><button class="dashboard-tab">운영게시판</button><button class="dashboard-tab">내 자산</button><button class="dashboard-tab">모의투자</button><button class="dashboard-tab">AI 브리핑</button>
+    </nav>
+
+    <main class="workspace" aria-label="대시보드 작업 영역">
+      <section class="pane" aria-labelledby="market-heading">
+        <div class="pane-header"><h2 id="market-heading">시세</h2><span class="pill">계좌별 보기</span><div class="pane-tools"><button class="ghost icon" title="설정">⚙</button><button class="ghost icon" title="닫기">×</button></div></div>
+        <div class="toolbar-row"><select class="control"><option>기본</option><option>15분</option><option>30분</option></select><button class="control">기본</button><button class="control">15분</button><button class="control">30분</button><span class="spacer"></span><button class="control">내 순서⌄</button></div>
+        <div class="input-row"><input class="control" value="종목명·코드 검색" aria-label="종목 검색"><input class="control" value="수량" aria-label="수량"><button class="primary">추가</button></div>
+        <div class="pane-body">
+          <table id="marketTable"><thead><tr><th style="width:38%">지표</th><th style="width:22%">현재가</th><th style="width:19%">일간%</th><th>거래량</th></tr></thead><tbody>
+            <tr class="selected" data-address="A4" data-formula="삼성전자"><td class="link">삼성전자</td><td class="number">256,508</td><td class="number down">-1.38%</td><td class="number">294만</td></tr>
+            <tr data-address="A5" data-formula="SK하이닉스"><td class="link">SK하이닉스</td><td class="number">182,073</td><td class="number down">-1.14%</td><td class="number">1.6억</td></tr>
+            <tr data-address="A6" data-formula="현대차"><td class="link">현대차</td><td class="number">364,194</td><td class="number down">-0.77%</td><td class="number">53만</td></tr>
+            <tr data-address="A7" data-formula="네이버"><td class="link">네이버</td><td class="number">194,784</td><td class="number down">-1.35%</td><td class="number">111만</td></tr>
+            <tr data-address="A8" data-formula="LG전자"><td class="link">LG전자</td><td class="number">197,776</td><td class="number up">+0.34%</td><td class="number">162만</td></tr>
+            <tr data-address="A9" data-formula="삼성전기"><td class="link">삼성전기</td><td class="number">1,371,140</td><td class="number down">-0.44%</td><td class="number">150만</td></tr>
+            <tr data-address="A10" data-formula="한미반도체"><td class="link">한미반도체</td><td class="number">230,431</td><td class="number down">-1.57%</td><td class="number">111만</td></tr>
+            <tr data-address="A11" data-formula="코스피야선"><td class="link">코스피야선</td><td class="number">1,083.70</td><td class="number down">-0.80%</td><td class="number">-</td></tr>
+            <tr data-address="A12" data-formula="미국채 10년"><td class="link">미국채 10년</td><td class="number">4.9470</td><td class="number down">-1.14%</td><td class="number">-</td></tr>
+            <tr data-address="A13" data-formula="나스닥 선물"><td class="link">나스닥 선물</td><td class="number">29,787.00</td><td class="number up">+0.15%</td><td class="number">11만</td></tr>
+          </tbody></table>
+        </div>
+      </section>
+
+      <section class="pane" aria-labelledby="news-heading">
+        <div class="pane-header"><h2 id="news-heading">뉴스</h2><span class="pill">실시간</span><div class="pane-tools"><button class="ghost icon" title="새로 고침">↻</button><button class="ghost icon" title="필터">⌕</button></div></div>
+        <div class="kpis"><div class="kpi"><small>오늘 시장</small><strong class="up">+0.42%</strong></div><div class="kpi"><small>뉴스 수</small><strong>124건</strong></div><div class="kpi"><small>업데이트</small><strong>21:48</strong></div></div>
+        <div class="pane-body"><table><thead><tr><th style="width:10%">시장</th><th style="width:11%">시각</th><th style="width:41%">헤드라인</th><th>요약</th></tr></thead><tbody>
+          <tr><td>미장</td><td>21:36</td><td class="news-title">투자 이슈 Step Aside, Nvidia: 1 Reason Why Meta Platforms...</td><td class="news-summary">31분 전 · Yahoo Finance</td></tr>
+          <tr><td>국장</td><td>21:01</td><td class="news-title">미·일 금리인상에도 코스피 급등…반도체주 강세</td><td class="news-summary">미국과 일본의 기준금리를 올렸지만 코스피는 2% 넘게 상승했습니다.</td></tr>
+          <tr><td>미장</td><td>20:58</td><td class="news-title">2 S&amp;P 500 Stocks Worth Your Attention and 1 We Question</td><td class="news-summary">Yahoo Finance · 시장 업데이트</td></tr>
+          <tr><td>국장</td><td>20:48</td><td class="news-title">아마존, FTC 소송 악재에도 광고 수익 개선…재강점</td><td class="news-summary">아마존 주가는 약세를 이어갔지만 광고 수익 전망은 개선됐습니다.</td></tr>
+          <tr><td>국장</td><td>20:28</td><td class="news-title">“언제부터 반도체 회사였지?”…3조 넘게 쏟아붓고 합류한 그룹</td><td class="news-summary">산업 및 투자자 관점의 상세 분석을 확인할 수 있습니다.</td></tr>
+          <tr><td>미장</td><td>20:20</td><td class="news-title">넷플릭스, 가입자 시청시간 감소+라이언입 악화…투자 의견</td><td class="news-summary">StockStory · 투자자 참고용 정보입니다.</td></tr>
+        </tbody></table></div>
+      </section>
+
+      <section class="pane chat" aria-labelledby="chat-heading">
+        <div class="pane-header"><h2 id="chat-heading">채팅</h2><span class="pill">⚡ 124명 / 사이트 162명</span><div class="pane-tools"><button class="ghost icon" title="설정">⚙</button><button class="ghost icon" title="닫기">×</button></div></div>
+        <div class="toolbar-row"><button class="control">채널1</button><button class="control">채널2</button><span class="spacer"></span><button class="ghost icon" title="패널 접기">↗</button></div>
+        <div class="pane-body chat-list" id="chatList">
+          <div class="chat-message"><div class="meta"><strong>root</strong><span>3h 21:34</span></div>아이폰 18프로 출시일인데 여긴 받은신 분이 없나요?</div>
+          <div class="chat-message"><div class="meta"><strong>오목</strong><span>21:47</span></div>수타자장님이 방금 오목 방을 열었어요.</div>
+          <div class="chat-message"><div class="meta"><strong>살려줘라좀</strong><span>21:47</span></div>돈이 없어서 못사여 물려서</div>
+          <div class="chat-message"><div class="meta"><strong>장기</strong><span>21:42</span></div>가볍게 한 판 어떠세요?</div>
+          <div class="chat-message"><div class="meta"><strong>대한항공최대주주</strong><span>21:40</span></div>불기 한사이클에 87000이 1.2억이되도</div>
+        </div>
+        <form class="chat-compose" id="chatForm"><input class="control" id="chatInput" placeholder="@종목명으로 태그 가능" aria-label="채팅 입력"><button class="primary">전송</button></form>
+      </section>
+    </main>
+
+    <div class="notice-bar"><strong>광고</strong><span>엑셀코스피 모바일 앱 출시 · 계속해서 기능이 추가됩니다.</span><span class="spacer"></span><button class="ghost">×</button></div>
+    <nav class="sheet-tabs" aria-label="워크시트 탭"><button class="sheet-arrow">‹</button><button class="sheet-arrow">›</button><button class="sheet-tab active">자동</button><button class="sheet-tab">국장</button><button class="sheet-tab">미장</button><button class="sheet-tab">코인</button><button class="sheet-tab">탐색</button><button class="sheet-tab">관심 전체</button><button class="sheet-tab">보유 전체</button><button class="sheet-add">＋</button><button class="mobile">▣ 모바일 앱</button></nav>
+    <footer class="status-bar"><span>ExcelT</span><span id="statusText">준비됨</span><span>선택 영역 합계: 256,508</span><span class="spacer"></span><span>현재 접속 162명</span><span>100%</span><span class="zoom"><button class="ghost" id="zoomOut">−</button><input id="zoom" type="range" min="80" max="120" value="100"><button class="ghost" id="zoomIn">＋</button></span><span>보통 보기</span></footer>
+  </div>
+
+  <div class="modal-backdrop" id="themeModal" role="dialog" aria-modal="true" aria-labelledby="themeTitle" hidden>
+    <div class="modal">
+      <div class="modal-head"><span class="excel-mark" style="color:var(--accent)">X</span><h1 id="themeTitle">ExcelT 첫 방문을 환영합니다</h1><button class="modal-close" id="modalClose" aria-label="닫기">×</button></div>
+      <div class="progress"><span class="active"></span><span></span><span></span><span></span><span></span></div>
+      <h2 style="text-align:center;margin:0 0 5px">처음 오셨군요!</h2>
+      <p class="modal-intro">원하는 작업 방식과 테마를 선택해 주세요.<br>나중에 설정에서 다시 바꿀 수 있습니다.</p>
+      <div class="theme-grid" id="themeGrid">
+        <button class="theme-card" data-theme-card="m365-gray"><span class="preview"></span><strong>최신 M365 회색</strong><small>차분한 기본 환경</small></button>
+        <button class="theme-card" data-theme-card="google-blue"><span class="preview"></span><strong>Google 스프레드시트</strong><small>파랑 중심의 작업 환경</small></button>
+        <button class="theme-card selected" data-theme-card="excel-green"><span class="preview"></span><strong>다채로운 녹색</strong><small>ExcelT 기본 테마</small></button>
+        <button class="theme-card" data-theme-card="excel-white"><span class="preview"></span><strong>흰색</strong><small>가볍고 밝은 환경</small></button>
+        <button class="theme-card" data-theme-card="dark-gray"><span class="preview"></span><strong>어두운 회색</strong><small>눈의 피로를 줄이는 환경</small></button>
+        <button class="theme-card" data-theme-card="black"><span class="preview"></span><strong>검정</strong><small>고대비 다크 환경</small></button>
+      </div>
+      <div class="modal-options"><label><input type="checkbox" id="collapseRibbon"> <span><strong>리본 메뉴 접고 시작</strong><small>시세표와 뉴스가 더 많이 보입니다. 나중에 리본을 다시 펼칠 수 있어요.</small></span></label><label><input type="checkbox" id="doNotMimic"> <span><strong>위장하지 않기</strong><small>ExcelT의 데이터 입력 UX는 유지하면서 색상과 Shell만 간결하게 표시합니다.</small></span></label></div>
+      <div class="modal-actions"><button class="later" id="laterButton">나중에</button><button class="next" id="nextButton">다음</button></div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const root = document.body;
+      const storageKey = 'excelT.shell.preferences';
+      const themes = ['m365-gray', 'google-blue', 'excel-green', 'excel-white', 'dark-gray', 'black'];
+      let preferences = {};
+      try { preferences = JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch (_) {}
+      let selectedTheme = themes.includes(preferences.themeId) ? preferences.themeId : 'excel-green';
+
+      const applyTheme = (themeId) => {
+        if (!themes.includes(themeId)) return;
+        selectedTheme = themeId;
+        root.dataset.theme = themeId;
+        document.querySelectorAll('.theme-card').forEach(card => card.classList.toggle('selected', card.dataset.themeCard === themeId));
+      };
+      const savePreferences = (complete = true) => {
+        preferences = {
+          ...preferences,
+          themeId: selectedTheme,
+          ribbonCollapsed: document.getElementById('collapseRibbon').checked,
+          doNotMimicExcel: document.getElementById('doNotMimic').checked,
+          onboardingComplete: complete
+        };
+        localStorage.setItem(storageKey, JSON.stringify(preferences));
+      };
+      applyTheme(selectedTheme);
+      document.getElementById('collapseRibbon').checked = Boolean(preferences.ribbonCollapsed);
+      document.getElementById('doNotMimic').checked = Boolean(preferences.doNotMimicExcel);
+
+      const app = document.getElementById('app');
+      const setRibbon = (collapsed) => { app.classList.toggle('ribbon-collapsed', collapsed); document.getElementById('ribbonToggle').textContent = collapsed ? '리본 펼치기' : '리본 접기'; };
+      setRibbon(Boolean(preferences.ribbonCollapsed));
+      document.getElementById('ribbonToggle').addEventListener('click', () => setRibbon(!app.classList.contains('ribbon-collapsed')));
+
+      const modal = document.getElementById('themeModal');
+      const openModal = () => { modal.hidden = false; };
+      const closeModal = (complete) => { savePreferences(complete); modal.hidden = true; };
+      document.getElementById('themeButton').addEventListener('click', openModal);
+      document.getElementById('settingsButton').addEventListener('click', openModal);
+      document.getElementById('modalClose').addEventListener('click', () => closeModal(true));
+      document.getElementById('laterButton').addEventListener('click', () => closeModal(true));
+      document.getElementById('nextButton').addEventListener('click', () => { setRibbon(document.getElementById('collapseRibbon').checked); closeModal(true); });
+      document.querySelectorAll('.theme-card').forEach(card => card.addEventListener('click', () => applyTheme(card.dataset.themeCard)));
+      if (!preferences.onboardingComplete) modal.hidden = false;
+
+      document.querySelectorAll('.ribbon-tab').forEach(tab => tab.addEventListener('click', () => { document.querySelectorAll('.ribbon-tab').forEach(item => item.classList.remove('active')); tab.classList.add('active'); }));
+      document.querySelectorAll('.dashboard-tab').forEach(tab => tab.addEventListener('click', () => { document.querySelectorAll('.dashboard-tab').forEach(item => item.classList.remove('active')); tab.classList.add('active'); document.getElementById('statusText').textContent = tab.textContent + ' 보기'; }));
+      document.querySelectorAll('.sheet-tab').forEach(tab => tab.addEventListener('click', () => { document.querySelectorAll('.sheet-tab').forEach(item => item.classList.remove('active')); tab.classList.add('active'); document.getElementById('statusText').textContent = tab.textContent + ' 시트'; }));
+      document.querySelectorAll('#marketTable tbody tr').forEach(row => row.addEventListener('click', () => { document.querySelectorAll('#marketTable tbody tr').forEach(item => item.classList.remove('selected')); row.classList.add('selected'); document.getElementById('nameBox').value = row.dataset.address; document.getElementById('formulaValue').textContent = row.dataset.formula; }));
+
+      document.getElementById('chatForm').addEventListener('submit', (event) => { event.preventDefault(); const input = document.getElementById('chatInput'); const text = input.value.trim(); if (!text) return; const message = document.createElement('div'); message.className = 'chat-message'; message.innerHTML = '<div class="meta"><strong>나</strong><span>방금</span></div>' + text.replace(/[&<>]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[char])); document.getElementById('chatList').append(message); input.value = ''; message.scrollIntoView({block:'nearest'}); });
+      const zoom = document.getElementById('zoom');
+      document.getElementById('zoomOut').addEventListener('click', () => { zoom.value = Math.max(80, Number(zoom.value) - 10); });
+      document.getElementById('zoomIn').addEventListener('click', () => { zoom.value = Math.min(120, Number(zoom.value) + 10); });
+    })();
+  </script>
+</body>
+</html>
