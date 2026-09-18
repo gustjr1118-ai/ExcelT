@@ -75,6 +75,8 @@
     .ribbon-group-name { color:var(--muted); font-size:10px; text-align:center; margin-top:3px; }
     .ribbon-collapsed .ribbon-body { display:none; }
     .app.ribbon-collapsed { grid-template-rows:38px 34px 0 32px minmax(0,1fr) 24px 30px 26px; }
+    .plain-shell .ribbon-body { display:none; }
+    .plain-shell .app { grid-template-rows:38px 34px 0 32px minmax(0,1fr) 24px 30px 26px; }
 
     .formula-bar { display:flex; align-items:center; gap:6px; padding:3px 10px; background:var(--soft); border-bottom:1px solid var(--grid); }
     .name-box { width:74px; text-align:center; }
@@ -323,17 +325,19 @@
 
       const app = document.getElementById('app');
       const setRibbon = (collapsed) => { app.classList.toggle('ribbon-collapsed', collapsed); document.getElementById('ribbonToggle').textContent = collapsed ? '리본 펼치기' : '리본 접기'; };
+      const setPlainShell = (plain) => { root.classList.toggle('plain-shell', plain); };
       setRibbon(Boolean(preferences.ribbonCollapsed));
+      setPlainShell(Boolean(preferences.doNotMimicExcel));
       document.getElementById('ribbonToggle').addEventListener('click', () => setRibbon(!app.classList.contains('ribbon-collapsed')));
 
       const modal = document.getElementById('themeModal');
       const openModal = () => { modal.hidden = false; };
-      const closeModal = (complete) => { savePreferences(complete); modal.hidden = true; };
+      const closeModal = (complete) => { setRibbon(document.getElementById('collapseRibbon').checked); setPlainShell(document.getElementById('doNotMimic').checked); savePreferences(complete); modal.hidden = true; };
       document.getElementById('themeButton').addEventListener('click', openModal);
       document.getElementById('settingsButton').addEventListener('click', openModal);
       document.getElementById('modalClose').addEventListener('click', () => closeModal(true));
       document.getElementById('laterButton').addEventListener('click', () => closeModal(true));
-      document.getElementById('nextButton').addEventListener('click', () => { setRibbon(document.getElementById('collapseRibbon').checked); closeModal(true); });
+      document.getElementById('nextButton').addEventListener('click', () => { setRibbon(document.getElementById('collapseRibbon').checked); setPlainShell(document.getElementById('doNotMimic').checked); closeModal(true); });
       document.querySelectorAll('.theme-card').forEach(card => card.addEventListener('click', () => applyTheme(card.dataset.themeCard)));
       if (!preferences.onboardingComplete) modal.hidden = false;
 
